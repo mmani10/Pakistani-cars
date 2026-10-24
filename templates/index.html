@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What is my car worth? | Used Car Price Predictor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F3F5F8; --card:#FFFFFF; --ink:#12263A; --muted:#5B6B7B; --line:#DCE2E9;
+  --accent:#FFC93C; --accent-ink:#2B2100; --good:#17824F; --field:#F8FAFC;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0D1722; --card:#15222F; --ink:#EAF0F6; --muted:#9AAABB; --line:#26384A; --field:#101C28; --good:#4CC38A;}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Manrope,system-ui,sans-serif;line-height:1.5}
+.wrap{max-width:1060px;margin:0 auto;padding:28px 20px 60px}
+header{padding:18px 0 26px}
+h1{font-size:clamp(1.9rem,4.5vw,2.8rem);line-height:1.1;margin:0 0 10px;font-weight:800;letter-spacing:-.02em}
+header p{margin:0;color:var(--muted);max-width:56ch;font-size:1.05rem}
+.grid{display:grid;grid-template-columns:1.25fr 1fr;gap:22px;align-items:start}
+@media(max-width:860px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px}
+fieldset{border:0;padding:0;margin:0 0 22px}
+legend{font-weight:700;font-size:1.05rem;margin-bottom:12px;padding:0}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:520px){.row{grid-template-columns:1fr}}
+label.f{display:block;font-size:.88rem;font-weight:600;color:var(--muted);margin-bottom:6px}
+select,input[type=number]{width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid var(--line);background:var(--field);color:var(--ink);font:inherit;font-size:1rem}
+select:focus,input:focus,button:focus-visible,.pill input:focus-visible+span{outline:3px solid var(--accent);outline-offset:1px}
+select:disabled{opacity:.55}
+.hint{font-size:.8rem;color:var(--muted);margin-top:5px}
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.pill input{position:absolute;opacity:0}
+.pill span{display:inline-block;padding:10px 16px;border-radius:999px;border:1.5px solid var(--line);background:var(--field);cursor:pointer;font-weight:600;font-size:.95rem}
+.pill input:checked+span{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.field{margin-bottom:14px}
+button.go{width:100%;padding:16px;border:0;border-radius:12px;background:var(--accent);color:var(--accent-ink);font:inherit;font-weight:800;font-size:1.1rem;cursor:pointer}
+button.go:disabled{opacity:.6;cursor:wait}
+.err{color:#C0392B;font-weight:600;margin-top:10px;min-height:1.2em}
+/* the price tag */
+.tag{position:sticky;top:20px;overflow:hidden;padding:0}
+.tag-top{background:var(--ink);color:var(--card);padding:22px 24px 26px;position:relative}
+.tag-top::after{content:"";position:absolute;right:22px;top:16px;width:14px;height:14px;border-radius:50%;background:var(--bg)}
+.tag-top small{opacity:.8;font-weight:600}
+.price{font-size:clamp(2.2rem,5vw,3rem);font-weight:800;letter-spacing:-.02em;margin:6px 0 2px}
+.full{opacity:.8;font-size:.95rem}
+.tag-body{padding:20px 24px 24px}
+.empty{color:var(--muted)}
+.range{display:flex;justify-content:space-between;font-weight:700;margin:6px 0 10px}
+.bar{height:8px;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--good));position:relative}
+.bar i{position:absolute;left:50%;top:-5px;width:4px;height:18px;border-radius:3px;background:var(--ink);transform:translateX(-50%)}
+.note{font-size:.88rem;color:var(--muted);margin:12px 0 0}
+h3{font-size:1rem;margin:22px 0 8px}
+.sim{width:100%;border-collapse:collapse;font-size:.88rem}
+.sim td,.sim th{padding:8px 4px;border-bottom:1px solid var(--line);text-align:left}
+.sim th{color:var(--muted);font-weight:600}
+.stats{display:flex;gap:18px;flex-wrap:wrap;margin-top:22px;color:var(--muted);font-size:.9rem}
+.stats b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>What is your used car worth?</h1>
+    <p>Pick your car, tell us a little about it, and get a fair market price in seconds. The estimate is based on <span id="rows">tens of thousands of</span> real PakWheels listings.</p>
+  </header>
+
+  <div class="grid">
+    <form class="card" id="form" autocomplete="off">
+      <fieldset>
+        <legend>Your car</legend>
+        <div class="row">
+          <div class="field"><label class="f" for="make">Brand</label><select id="make" required></select></div>
+          <div class="field"><label class="f" for="model">Model</label><select id="model" required></select></div>
+        </div>
+        <div class="row">
+          <div class="field"><label class="f" for="year">Model year</label><select id="year" required></select></div>
+          <div class="field"><label class="f" for="engine">Engine size (cc)</label><select id="engine" required></select>
+            <div class="hint">Look in your car's papers if unsure</div></div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>How it drives</legend>
+        <div class="field"><label class="f">Gear type</label><div class="pills" id="transmission"></div></div>
+        <div class="field"><label class="f">Fuel</label><div class="pills" id="fuel"></div></div>
+        <div class="field"><label class="f">Where was it assembled?</label>
+          <div class="pills" id="assembly">
+            <label class="pill"><input type="radio" name="assembly" value="Local" checked><span>Local (Pakistan)</span></label>
+            <label class="pill"><input type="radio" name="assembly" value="Imported"><span>Imported</span></label>
+          </div></div>
+        <div class="field"><label class="f" for="mileage">Kilometres driven</label>
+          <input type="number" id="mileage" min="100" max="500000" step="500" required>
+          <div class="hint" id="mileHint"></div></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Location</legend>
+        <div class="row">
+          <div class="field"><label class="f" for="city">City where it is for sale</label><select id="city"></select></div>
+          <div class="field"><label class="f" for="registered">Registered in</label><select id="registered"></select></div>
+        </div>
+      </fieldset>
+
+      <button class="go" id="go" type="submit">Get my car's price</button>
+      <div class="err" id="err" role="alert"></div>
+    </form>
+
+    <aside class="card tag" aria-live="polite">
+      <div class="tag-top">
+        <small>Estimated price</small>
+        <div class="price" id="price">Rs --</div>
+        <div class="full" id="full">Fill in the form to see your estimate</div>
+      </div>
+      <div class="tag-body" id="detail">
+        <p class="empty">Your price range and similar cars for sale will appear here.</p>
+        <div class="stats" id="stats"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let OPT = null;
+
+const money = n => {
+  if (n >= 1e7) return "Rs " + (n/1e7).toFixed(2) + " crore";
+  return "Rs " + (n/1e5).toFixed(2) + " lakh";
+};
+const full = n => "Rs " + Math.round(n).toLocaleString("en-PK");
+const fill = (sel, items, selected) => {
+  sel.innerHTML = items.map(v => `<option value="${v}">${v}</option>`).join("");
+  if (selected !== undefined) sel.value = selected;
+};
+const pills = (box, name, items) => {
+  box.innerHTML = items.map((v,i) =>
+    `<label class="pill"><input type="radio" name="${name}" value="${v}" ${i===0?"checked":""}><span>${v}</span></label>`).join("");
+};
+const radio = name => document.querySelector(`input[name=${name}]:checked`).value;
+
+function onMake(){
+  fill($("model"), Object.keys(OPT.cars[$("make").value]));
+  onModel();
+}
+function onModel(){
+  const m = OPT.cars[$("make").value][$("model").value];
+  const years = []; for (let y = m.year_max; y >= m.year_min; y--) years.push(y);
+  fill($("year"), years, Math.min(m.year_max, 2015) >= m.year_min ? Math.min(m.year_max, 2015) : m.year_max);
+  fill($("engine"), m.engines, m.typical_engine);
+  pills($("transmission"), "transmission", m.transmissions);
+  pills($("fuel"), "fuel", m.fuels);
+  $("mileage").value = m.typical_mileage;
+  $("mileHint").textContent = "Most " + $("model").value + " cars have around " + m.typical_mileage.toLocaleString() + " km";
+  current = m;
+}
+let current = null;
+
+async function init(){
+  OPT = await (await fetch("/api/options")).json();
+  fill($("make"), OPT.makes);
+  fill($("city"), OPT.cities, "Lahore");
+  fill($("registered"), OPT.registered, "Lahore");
+  $("make").value = OPT.makes.includes("Toyota") ? "Toyota" : OPT.makes[0];
+  onMake();
+  if (OPT.cars.Toyota && OPT.cars.Toyota.Corolla) { $("model").value = "Corolla"; onModel(); }
+  $("rows").textContent = OPT.metrics.rows.toLocaleString();
+  $("stats").innerHTML =
+    `<span>Average error: <b>${money(OPT.metrics.mae)}</b></span><span>Accuracy score: <b>${(OPT.metrics.r2*100).toFixed(1)}%</b></span>`;
+}
+
+$("make").addEventListener("change", onMake);
+$("model").addEventListener("change", onModel);
+
+$("form").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("err").textContent = "";
+  const km = +$("mileage").value;
+  if (!(km >= 100 && km <= 500000)) { $("err").textContent = "Please enter kilometres between 100 and 500,000."; return; }
+  $("go").disabled = true; $("go").textContent = "Working it out...";
+  const body = {
+    make:$("make").value, model:$("model").value, year:$("year").value, engine:$("engine").value,
+    transmission:radio("transmission"), fuel:radio("fuel"), assembly:radio("assembly"),
+    mileage:km, city:$("city").value, registered:$("registered").value, body:current.body
+  };
+  try{
+    const r = await fetch("/api/predict",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || "Something went wrong.");
+    show(d, body);
+  }catch(x){ $("err").textContent = x.message; }
+  $("go").disabled = false; $("go").textContent = "Get my car's price";
+});
+
+function show(d, b){
+  $("price").textContent = money(d.price);
+  $("full").textContent = full(d.price) + " for your " + b.year + " " + b.make + " " + b.model;
+  let h = `<div class="range"><span>${money(d.low)}</span><span>${money(d.high)}</span></div>
+    <div class="bar"><i></i></div>
+    <p class="note">Most cars like yours sell between these two prices. Cars in better or worse condition than average can go outside this range.</p>`;
+  const s = d.similar;
+  if (s.count){
+    h += `<h3>${s.count} similar ${b.model} listings (${b.year-2} to ${+b.year+2})</h3>
+    <p class="note" style="margin-top:0">Typical asking price: <b>${money(s.median)}</b></p>
+    <table class="sim"><tr><th>Year</th><th>Km driven</th><th>City</th><th>Price</th></tr>` +
+    s.listings.map(l => `<tr><td>${l.year}</td><td>${l.mileage.toLocaleString()}</td><td>${l.city}</td><td>${money(l.price)}</td></tr>`).join("") + `</table>`;
+  } else h += `<p class="note">We have no close matches in our listings, so this estimate is based on the overall pattern.</p>`;
+  h += `<div class="stats"><span>Model average error: <b>${money(OPT.metrics.mae)}</b></span><span>Accuracy score: <b>${(OPT.metrics.r2*100).toFixed(1)}%</b></span></div>`;
+  $("detail").innerHTML = h;
+  if (window.innerWidth <= 860) $("detail").scrollIntoView({behavior:"smooth"});
+}
+init();
+</script>
+</body>
+</html>
