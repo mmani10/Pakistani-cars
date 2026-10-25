@@ -17,7 +17,7 @@ A small full-stack machine learning app. It predicts a used car's selling price
    python train_models.py
 3. Start the server:
    python -m uvicorn main:app --reload
-4. Open http://127.0.0.1:8000 in your browser.
+4. Open http://127.0.0.1:8000 in our browser.
 
 ## Models
 - Regression: [Linear Regression] – predicts selling price. R² = [value]
